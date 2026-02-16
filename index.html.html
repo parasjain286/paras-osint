@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Premium Info Dashboard</title>
+
+<style>
+body{
+    margin:0;
+    font-family: Consolas, monospace;
+    background: black;
+    color:#00ff9c;
+    overflow:hidden;
+}
+
+/* Matrix background */
+canvas{
+    position:fixed;
+    top:0;
+    left:0;
+    z-index:-1;
+}
+
+/* Dashboard */
+.container{
+    padding:20px;
+    text-align:center;
+}
+
+h1{
+    text-shadow:0 0 15px #00ff9c;
+}
+
+#processingBox pre, #draggableResult pre, #compilingBox pre, #neuralBox pre, #crackerBox pre, #interpolBox pre {
+    padding: 10px;
+    margin: 0;
+    background: black;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    max-height: 300px;
+    overflow: auto;
+    white-space: pre-wrap;
+    font-style: italic;
+    font-size: 14px;
+}
+
+.draggable{
+    position: absolute;
+    top: 100px;
+    left: 100px;
+    width: 400px;
+    background: rgba(0,0,0,0.85);
+    border: 2px solid #00ff9c;
+    border-radius: 10px;
+    box-shadow: 0 0 20px #00ff9c;
+    z-index: 999;
+    cursor: move;
+}
+
+#dragHeader,#dragHeader3,#dragHeader4,#dragHeader5,#dragHeader6{
+    background: #00ff9c;
+    color: black;
+    padding: 10px;
+    font-weight: bold;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    cursor: grab;
+}
+
+#dragHeader:active,#dragHeader3:active,#dragHeader4:active,#dragHeader5:active,#dragHeader6:active{
+    cursor: grabbing;
+}
+
+.box{
+    background:rgba(0,0,0,0.7);
+    border:1px solid #00ff9c;
+    padding:20px;
+    width:500px;
+    margin:auto;
+    border-radius:10px;
+    box-shadow:0 0 20px #00ff9c;
+}
+
+input, select{
+    width:90%;
+    padding:10px;
+    margin:10px;
+    background:black;
+    color:#00ff9c;
+    border:1px solid #00ff9c;
+    border-radius:5px;
+}
+
+input:focus, select:focus{
+    outline:none;
+    border-color:#0ff;
+}
+
+button{
+    padding:10px 20px;
+    background:#00ff9c;
+    border:none;
+    cursor:pointer;
+    font-weight:bold;
+    transition:0.2s;
+    border-radius:5px;
+}
+
+button:hover{
+    background:#0ff;
+    color:black;
+}
+
+/* ========================LOGIN OVERLAY======================== */
+#loginOverlay{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.95);
+    z-index:9999;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+#loginBox{
+    background:rgba(0,0,0,0.9);
+    border:2px solid #00ff9c;
+    padding:40px;
+    border-radius:15px;
+    text-align:center;
+    box-shadow:0 0 30px #00ff9c;
+    animation: glow 1.5s infinite alternate;
+    width:350px;
+}
+
+#loginBox input{
+    width:80%;
+    margin:10px 0;
+    padding:10px;
+    background:black;
+    color:#00ff9c;
+    border:1px solid #00ff9c;
+    border-radius:5px;
+    font-size:16px;
+}
+
+#loginBox input:focus{
+    border-color:#0ff;
+    outline:none;
+}
+
+#loginBox button{
+    width:50%;
+    margin-top:15px;
+}
+
+#loginMsg{
+    color:red;
+    margin-top:10px;
+    font-weight:bold;
+}
+
+@keyframes glow{
+    0%{ box-shadow:0 0 10px #00ff; }
+    50%{ box-shadow:0 0 25px #0ff; }
+    100%{ box-shadow:0 0 10px #00ff; }
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- Login Overlay -->
+<div id="loginOverlay">
+    <div id="loginBox">
+        <h2 style="color:#0ff;">Login</h2>
+        <input type="text" id="username" placeholder="Username"><br>
+        <input type="password" id="password" placeholder="Password"><br>
+        <button id="loginBtn">Login</button>
+        <div id="loginMsg"></div>
+    </div>
+</div>
+
+<canvas id="matrix"></canvas>
+
+<div class="container" id="dashboard" style="display:none;">
+<h1>⚡ paras jain Osint Dashboard ⚡</h1>
+
+<div class="box">
+
+<select id="service">
+<option>Number ➜ Information</option>
+<option>Vehicle ➜ Information</option>
+<option>GST ➜ Information</option>
+<option>Aadhaar ➜ Information</option>
+<option>IMEI ➜ Information</option>
+<option>Pincode ➜ Information</option>
+<option>IP ➜ Information</option>
+<option>IFSC ➜ Information</option>
+<option>Instagram ➜ Number</option>
+<option>Telegram ➜ Number</option>
+<option>CNIC ➜ Information</option>
+<option>Pak ➜ Information</option>
+<option>Vechicle ➜ Number</option>
+<option>Instagram ➜ Information</option>
+</select>
+
+<input type="text" id="query" placeholder="Enter Query : ">
+
+<button id="searchBtn">SEARCH</button>
+
+<!-- Result Box -->
+<div id="draggableResult" class="draggable">
+    <div id="dragHeader">⚡Result⚡</div>
+    <pre id="output">Result will appear here...</pre>
+</div>
+
+<!-- Processing Box -->
+<div id="processingBox" class="draggable" style="display:none;">
+    <div id="dragHeader2">⚡ Decrypting....⚡</div>
+    <pre id="processingText">Initializing...</pre>
+</div>
+
+<!-- Compiling Box -->
+<div id="compilingBox" class="draggable">
+    <div id="dragHeader3">⚡ Compiling Code...⚡</div>
+    <pre id="compilingText">Waiting...</pre>
+</div>
+
+<!-- Neural Trace Box -->
+<div id="neuralBox" class="draggable">
+    <div id="dragHeader4">⚡ Neural Tracing Network⚡</div>
+    <pre id="neuralText">Initializing neural trace...</pre>
+</div>
+
+<!-- Premium Password Cracker Box -->
+<div id="crackerBox" class="draggable">
+    <div id="dragHeader5">⚡Password Cracker⚡</div>
+    <pre id="crackerText">Initializing password attack...</pre>
+</div>
+
+<!-- Interpol Database Box -->
+<div id="interpolBox" class="draggable">
+    <div id="dragHeader6">⚡ Interpol Database ⚡</div>
+    <pre id="interpolText">Initializing Interpol scan...</pre>
+</div>
+
+</div>
+</div>
+
+<audio id="beepSound">
+  <source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" type="audio/ogg">
+</audio>
+
+<audio id="grantedSound">
+  <source src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" type="audio/ogg">
+</audio>
+
+<script>
+// =======================BEEP FUNCTION=======================
+let beepReady = false;
+const beep = document.getElementById("beepSound");
+function enableBeep(){ beepReady=true; document.removeEventListener('click', enableBeep); }
+document.addEventListener('click', enableBeep);
+function playBeep(){ if(!beepReady) return; beep.currentTime=0; beep.play().catch(e=>{}); }
+
+// ================= MATRIX RAIN =================
+const canvas = document.getElementById("matrix");
+const ctx = canvas.getContext("2d");
+
+canvas.height = window.innerHeight;
+canvas.width = window.innerWidth;
+
+const letters = "01ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const fontSize = 16;
+const columns = canvas.width / fontSize;
+
+const drops = [];
+for(let i = 0; i < columns; i++){
+    drops[i] = 1;
+}
+
+function drawMatrix(){
+    ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = "#00ff9c";
+    ctx.font = fontSize + "px monospace";
+
+    for(let i = 0; i < drops.length; i++){
+        const text = letters.charAt(Math.floor(Math.random() * letters.length));
+        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+        if(drops[i] * fontSize > canvas.height && Math.random() > 0.975){
+            drops[i] = 0;
+        }
+
+        drops[i]++;
+    }
+}
+
+setInterval(drawMatrix, 33);
+
+// Resize fix
+window.addEventListener("resize", () => {
+    canvas.height = window.innerHeight;
+    canvas.width = window.innerWidth;
+});
+
+// =======================LOGIN SYSTEM=======================
+document.getElementById("loginBtn").addEventListener("click", function(){
+    beepReady = true; 
+    playBeep();
+    const user = document.getElementById("username").value;
+    const pass = document.getElementById("password").value;
+    const msg = document.getElementById("loginMsg");
+    
+if(user === "paras jain" && pass === "paras28678"){
+    document.getElementById("loginOverlay").style.display = "none";
+    document.getElementById("dashboard").style.display = "block";
+    
+    // 🔊 Voice Welcome
+    speakWelcome("");
+
+    } else{
+        msg.innerText = "❌ Invalid credentials!";
+    }
+});
+
+
+// ================= FEMALE AI VOICE + TYPING =================
+function speakWelcome(){
+
+    // 🔊 Play Access Granted sound
+    const granted = document.getElementById("grantedSound");
+    granted.currentTime = 0;
+    granted.play().catch(()=>{});
+
+    // ⌨️ Typing effect
+    const output = document.getElementById("output");
+    const text = "ACCESS GRANTED — Welcome Paras Hacker";
+    output.innerText = "";
+
+    let i = 0;
+    const typing = setInterval(()=>{
+        output.innerText += text[i];
+        i++;
+        if(i >= text.length) clearInterval(typing);
+    }, 40);
+
+    // 👩 Female AI voice
+    const msg = new SpeechSynthesisUtterance("Access Granted. Welcome Paras Hacker");
+
+    const voices = speechSynthesis.getVoices();
+    const femaleVoice = voices.find(v => v.name.toLowerCase().includes("female") || v.name.includes("Google UK English Female"));
+
+    if(femaleVoice) msg.voice = femaleVoice;
+
+    msg.rate = 1;
+    msg.pitch = 1.1;
+    msg.volume = 1;
+
+    speechSynthesis.speak(msg);
+}
+
+// ================= DRAG FUNCTION =================
+function dragElement(elmnt) {
+  let pos1=0,pos2=0,pos3=0,pos4=0;
+  const header = document.getElementById(elmnt.id+"Header") || elmnt;
+  header.onmousedown = dragMouseDown;
+  header.ontouchstart = dragTouchStart;
+
+  function dragMouseDown(e){ e.preventDefault(); pos3=e.clientX; pos4=e.clientY; document.onmouseup=closeDrag; document.onmousemove=elementDrag; }
+  function dragTouchStart(e){ const touch=e.touches[0]; pos3=touch.clientX; pos4=touch.clientY; document.ontouchend=closeDrag; document.ontouchmove=elementTouchDrag; }
+  function elementDrag(e){ e.preventDefault(); pos1=pos3-e.clientX; pos2=pos4-e.clientY; pos3=e.clientX; pos4=e.clientY; elmnt.style.top=(elmnt.offsetTop-pos2)+"px"; elmnt.style.left=(elmnt.offsetLeft-pos1)+"px"; }
+  function elementTouchDrag(e){ const touch=e.touches[0]; pos1=pos3-touch.clientX; pos2=pos4-touch.clientY; pos3=touch.clientX; pos4=touch.clientY; elmnt.style.top=(elmnt.offsetTop-pos2)+"px"; elmnt.style.left=(elmnt.offsetLeft-pos1)+"px"; }
+  function closeDrag(){ document.onmouseup=null; document.onmousemove=null; document.ontouchend=null; document.ontouchmove=null; }
+}
+
+// Apply drag to all boxes
+["draggableResult","processingBox","compilingBox","neuralBox","crackerBox","interpolBox"].forEach(id => dragElement(document.getElementById(id)));
+
+// ================= COMPILING ANIMATION =================
+let compilingInterval;
+function showCompiling(){
+    const cText=document.getElementById("compilingText");
+    const lines=[
+        "Initializing compiler engine...",
+        "Loading system modules...",
+        "Checking dependencies...",
+        "Injecting runtime libraries...",
+        "Optimizing performance...",
+        "Encrypting memory blocks...",
+        "Bypassing security layers...",
+        "Generating machine code...",
+        "Linking objects...",
+        "Compilation successful ✔"
+    ];
+    let i=0; cText.innerText="";
+    compilingInterval = setInterval(()=>{
+        cText.innerText += lines[i]+"\n"; cText.scrollTop=cText.scrollHeight; i++; if(i>=lines.length)i=0;
+    },700);
+}
+
+// ================= NEURAL TRACE ANIMATION =================
+let neuralInterval;
+function showNeuralTrace(){
+    const nText=document.getElementById("neuralText");
+    const frames=[
+`[●────○────●]\n  ↘   │   ↙\n    ○─●─○\n  ↗   │   ↖\n[●────○────●]\n\nTracing neural paths...`,
+`[○────●────○]\n  ↙   │   ↘\n    ●─○─●\n  ↖   │   ↗\n[○────●────○]\n\nAnalyzing nodes...`,
+`[●────○────●]\n  ↘   │   ↙\n    ○─●─○\n  ↗   │   ↖\n[●────○────●]\n\nMapping connections...`,
+`[○────●────○]\n  ↙   │   ↘\n    ●─○─●\n  ↖   │   ↗\n[○────●────○]\n\nNeural sync active...`
+    ];
+    let i=0;
+    neuralInterval=setInterval(()=>{ nText.innerText=frames[i]; i=(i+1)%frames.length; },400);
+}
+
+// ================= PREMIUM PASSWORD CRACKER =================
+let premiumCrackerInterval;
+function startPremiumPasswordCracker(){
+    const crackerText=document.getElementById("crackerText");
+    const chars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-={}[]|;:<>,.?/~`";
+    const linesCount=15,lineLength=40;
+    let frameCount=0;
+    let display=Array(linesCount).fill("").map(()=>" ".repeat(lineLength));
+
+    premiumCrackerInterval=setInterval(()=>{
+        frameCount++;
+        display.shift();
+        let newLine=""; for(let i=0;i<lineLength;i++){ newLine += Math.random()>0.7 ? chars.charAt(Math.floor(Math.random()*chars.length)) : " "; }
+        display.push(newLine);
+        let passwordLine="";
+        if(frameCount%50===0){
+            let fakePassword=""; for(let i=0;i<12;i++){ fakePassword+=chars.charAt(Math.floor(Math.random()*chars.length)); }
+            passwordLine="\n✔ Password found: "+fakePassword;
+        }
+        crackerText.innerText=display.join("\n")+passwordLine;
+        crackerText.scrollTop=crackerText.scrollHeight;
+    },100);
+}
+
+// ================= PROCESSING ANIMATION =================
+let processingInterval;
+function showProcessing(service,query){
+    const box=document.getElementById("processingBox");
+    const text=document.getElementById("processingText");
+    box.style.display="block";
+    let dots=0;
+    processingInterval=setInterval(()=>{
+        dots=(dots+1)%4;
+        text.innerText=`Decrypting ${service} for query "${query}"${'.'.repeat(dots)}`;
+    },500);
+}
+function hideProcessing(){ clearInterval(processingInterval); document.getElementById("processingBox").style.display="none"; }
+
+// ================= API FETCH =================
+async function fetchInfo(){
+    beepReady=true; 
+    const service=document.getElementById("service").value;
+    const query=document.getElementById("query").value.trim();
+    const output=document.getElementById("output");
+    if(query===""){ output.innerText="⚠️ Please enter a query!"; playBeep(); return; }
+    showProcessing(service,query);
+    output.innerText="Loading...";
+    try{
+        const proxy="https://corsproxy.io/?";
+        let url="";
+        switch(service){
+            case "IP ➜ Information": url=proxy+encodeURIComponent(`https://ipwho.is/${query}/json/`); break;
+            case "Number ➜ Information": url=proxy+encodeURIComponent(`https://hitackgrop-19xe.vercel.app/get_data?mobile=${query}&key=lund`); break;
+            case "Pincode ➜ Information": url=proxy+encodeURIComponent(`https://api.postalpincode.in/pincode/${query}`); break;
+            case "IFSC ➜ Information": url=proxy+encodeURIComponent(`https://ifsc.razorpay.com/${query}`); break;
+            case "Vehicle ➜ Information": url=proxy+encodeURIComponent(`https://vehicleinfobyterabaap.vercel.app/lookup?rc=${query}`); break;
+            case "GST ➜ Information": url=proxy+encodeURIComponent(`https://gstlookup.hideme.eu.org/?gstNumber=${query}`); break;
+            case "Aadhaar ➜ Information": url=proxy+encodeURIComponent(`https://api-ij32.onrender.com/aadhar?match=${query}`); break;
+            case "IMEI ➜ Information": url=proxy+encodeURIComponent(`https://imei.ek4nsh.in/api/imei?imei=${query}`); break;
+            case "Instagram ➜ Number": url=proxy+encodeURIComponent(`https://api.fastdevelopers.in/instanum?key=fast@paid&user=${query}`); break;
+            case "Telegram ➜ Number": url=proxy+encodeURIComponent(`https://tgtonun-five.vercel.app/sms?key=FREE&term=${query}`); break;
+            case "CNIC ➜ Information": url=proxy+encodeURIComponent(`https://mynkcnic-api.vercel.app/api/familyinfo?cnic=${query}&key=mynkapi`); break;
+            case "Pak ➜ Information": url=proxy+encodeURIComponent(`https://x.taitaninfo.workers.dev/?paknumber=${query}`); break;
+            case "Vechicle ➜ Number": url=proxy+encodeURIComponent(`https://vehicle-to-numn.vercel.app?term=${query}&key=FREE`); break;
+            case "Instagram ➜ Information": url=proxy+encodeURIComponent(`https://insta-profile-info-api.vercel.app/api/instagram.php?username=${query}`); break;
+            default: output.innerText="⚠️ Restricted or paid data."; return;
+        }
+        const fetchPromise=fetch(url).then(res=>res.json());
+        const data=await Promise.all([fetchPromise,new Promise(r=>setTimeout(r,5000))]).then(r=>r[0]);
+        output.innerText=JSON.stringify(data,null,2);
+        document.getElementById("draggableResult").style.display="block";
+        playBeep();
+    }catch(err){
+        output.innerText="⚠️ Error: "+err.message; playBeep();
+    }finally{ hideProcessing(); }
+}
+
+document.getElementById("searchBtn").addEventListener("click",fetchInfo);
+playBeep();
+
+// ================= INTERPOL SCROLLING ANIMATION =================
+let interpolInterval;
+function startInterpolScan(){
+    const interpolText = document.getElementById("interpolText");
+
+    const lines = [
+        "🔍 Connecting to Interpol secure server...",
+        "📡 Establishing encrypted tunnel...",
+        "🔍 Searching global criminal database...",
+        "🧠 AI matching biometric records...",
+        "📂 Accessing classified archives...",
+        "⚠️ Restricted file detected...",
+        "🔓 Decrypting sealed documents...",
+        "📑 Loading suspect profiles...",
+        "🌐 Cross‑checking international warrants...",
+        "✅ Match found — priority target",
+        "📡 Syncing with field agents...",
+        "🛰️ Tracking last known location...",
+        "🔄 Updating live intelligence feed...",
+        "✅ Interpol scan completed successfully"
+    ];
+
+    let i = 0;
+    interpolInterval = setInterval(()=>{
+        interpolText.innerText += lines[i] + "\n"; // ADD LINE
+        interpolText.scrollTop = interpolText.scrollHeight; // AUTO SCROLL
+        i = (i + 1) % lines.length;
+    }, 900);
+}
+
+
+
+// ================= START ON LOAD =================
+window.onload=function(){
+    document.getElementById("compilingBox").style.display="block";
+    document.getElementById("neuralBox").style.display="block";
+    showCompiling();
+    showNeuralTrace();
+    startPremiumPasswordCracker();
+    startInterpolScan();
+};
+</script>
+</body>
+</html>
